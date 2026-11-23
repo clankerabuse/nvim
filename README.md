@@ -27,7 +27,9 @@ changes; everything else here is safe to edit.
 | `<leader>an` | new chat |
 | `<leader>a.` | add the selection to the chat as context |
 | `<leader>ar` / `<leader>aR` | review working tree / branch |
-| `<leader>aC` | open the opencode CLI agent in a terminal |
+| `<leader>ao` | hand the file (or selection) to the opencode agent; edits land live |
+| `<leader>aO` | interactive opencode session in a terminal split |
+| `<leader>a?` | cheatsheet of every AI key |
 | `<leader>aT` | toggle inline completions |
 | `<a-l>` / `<a-h>` / `<a-k>` | accept completion / one line / N lines |
 | `<a-]>` / `<a-[>` / `<a-e>` | next / previous / dismiss completion |
@@ -42,6 +44,12 @@ adapter.
 
 Slash prompts: `:CodeCompanion /explain`, `/tests`, `/review`, `/refactor`,
 `/commit`.
+
+`<leader>ao` saves the buffer, runs `opencode run --auto` in the project root in
+a terminal split, and polls the file's mtime while it works: every write
+reloads the buffer (and gitsigns marks it), so the edit appears as it happens.
+`autoread` is on for the same reason. Any other open file the agent touched is
+reloaded when the run exits.
 
 ## Notes
 

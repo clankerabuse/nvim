@@ -198,7 +198,6 @@ return {
       { "<leader>a.", "<cmd>CodeCompanionChat Add<cr>", mode = "v", desc = "Add selection to chat" },
       { "<leader>ar", "<cmd>CodeCompanionCodeReview<cr>", desc = "Review working tree" },
       { "<leader>aR", "<cmd>CodeCompanionCodeReview Branch<cr>", desc = "Review branch" },
-      { "<leader>aC", "<cmd>CodeCompanionCLI agent=opencode<cr>", desc = "opencode CLI agent" },
     },
     opts = {
       adapters = {
@@ -235,16 +234,6 @@ return {
         inline = { adapter = { name = "opencode_go", model = MODEL } },
         cmd = { adapter = { name = "opencode_go", model = MODEL } },
         background = { adapter = { name = "opencode_go", model = MODEL } },
-        cli = {
-          agent = "opencode",
-          agents = {
-            opencode = {
-              cmd = "opencode",
-              args = {},
-              description = "OpenCode CLI (opencode go)",
-            },
-          },
-        },
       },
       prompt_library = {
         markdown = {

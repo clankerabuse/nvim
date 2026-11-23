@@ -14,6 +14,7 @@ end
 -- ~ Quality of life ~
 vim.o.confirm = true -- ask instead of failing on :q with unsaved buffers
 vim.opt.undofile = true -- persistent undo across sessions
+vim.opt.autoread = true -- let :checktime reload buffers an agent rewrote on disk
 vim.opt.undolevels = 10000
 vim.opt.updatetime = 200
 vim.opt.timeoutlen = 350
