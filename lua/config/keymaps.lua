@@ -45,8 +45,9 @@ map("v", "<leader>ao", function()
 end, { desc = "opencode: edit this selection" })
 map("n", "<leader>aO", oc.tui, { desc = "opencode: interactive session" })
 vim.api.nvim_create_user_command("Opencode", function(args)
-  oc.ask(args.args)
-end, { nargs = "*", desc = "Ask opencode to edit the current file" })
+  -- :Opencode! approves tool permissions for one run; the default refuses shell
+  oc.ask(args.args, nil, { auto = args.bang })
+end, { nargs = "*", bang = true, desc = "Ask opencode to edit the current file (:Opencode! auto-approves)" })
 
 -- A cheatsheet for the AI keys: which-key cannot show insert-mode maps, so the
 -- most important ones (accepting a completion) would otherwise be invisible
@@ -64,7 +65,8 @@ map("n", "<leader>a?", function()
     "",
     "opencode agent      <leader>ao edit file or selection, live reload",
     "                    <leader>aO interactive session",
-    "                    :Opencode <task>",
+    "                    :Opencode <task>  :Opencode! auto-approves",
+    "                    shell: nvim-safe profile, read-only only",
   }
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)

@@ -6,6 +6,57 @@
 -- reloads the buffer as it is written, so edits appear as they happen.
 local M = {}
 
+-- Shell approval is the risk gate, so the run is pinned to a restrictive agent:
+-- `nvim-safe` may edit files and run read-only commands, and asks before
+-- anything else. `opencode run` is non-interactive, so it turns an "ask" into a
+-- refusal — the agent simply cannot run arbitrary shell. `--auto` pre-approves
+-- those asks, so it is opt-in only: vim.g.opencode_auto_approve, or :Opencode!
+local SAFE_AGENT = "nvim-safe"
+
+local function safe_agent_path()
+  return vim.fn.expand("~/.config/opencode/agents/" .. SAFE_AGENT .. ".md")
+end
+
+local safe_agent_missing_notified = false
+
+local function warn_missing_agent()
+  if safe_agent_missing_notified then
+    return
+  end
+  safe_agent_missing_notified = true
+  vim.notify(
+    "opencode: ~/.config/opencode/agents/" .. SAFE_AGENT .. ".md is missing, so this run has the default permissions",
+    vim.log.levels.WARN
+  )
+end
+
+---Whether this run may auto-approve tool permissions.
+---@param opts? { auto?: boolean }
+local function auto_approved(opts)
+  if opts and opts.auto ~= nil then
+    return opts.auto
+  end
+  return vim.g.opencode_auto_approve == true
+end
+
+---Build the argv for one agent run: the safe agent unless auto-approval is on.
+---@param prompt string
+---@param opts? { auto?: boolean }
+---@return string[]
+function M.command(prompt, opts)
+  local cmd = { "opencode", "run" }
+  if vim.uv.fs_stat(safe_agent_path()) then
+    vim.list_extend(cmd, { "--agent", SAFE_AGENT })
+  else
+    warn_missing_agent()
+  end
+  if auto_approved(opts) then
+    table.insert(cmd, "--auto")
+  end
+  table.insert(cmd, prompt)
+  return cmd
+end
+
 local function bufname(buf)
   return vim.api.nvim_buf_get_name(buf or vim.api.nvim_get_current_buf())
 end
@@ -114,7 +165,8 @@ end
 ---Ask opencode to change the current file (or a visual selection) in place.
 ---@param instruction string
 ---@param selection? string
-function M.ask(instruction, selection)
+---@param opts? { auto?: boolean } auto = approve shell without asking; opt-in only
+function M.ask(instruction, selection, opts)
   instruction = vim.trim(instruction or "")
   if instruction == "" then
     return
@@ -150,19 +202,26 @@ function M.ask(instruction, selection)
     "Make the change now rather than describing it. Keep the diff small, match the existing style, and leave unrelated files alone."
   )
 
+  if auto_approved(opts) then
+    vim.notify("opencode: auto-approving command permissions for this run", vim.log.levels.WARN)
+  end
+
   watch(buf, path)
-  terminal_split({ "opencode", "run", "--auto", table.concat(prompt, "\n") }, project_root(buf), reload_changed_buffers)
+  terminal_split(M.command(table.concat(prompt, "\n"), opts), project_root(buf), reload_changed_buffers)
 end
 
 ---Prompt for an instruction, then hand it to opencode.
 ---@param selection? string
-function M.prompt(selection)
+---@param opts? { auto?: boolean }
+function M.prompt(selection, opts)
   vim.ui.input({ prompt = "opencode: " }, function(instruction)
-    M.ask(instruction or "", selection)
+    M.ask(instruction or "", selection, opts)
   end)
 end
 
----Open an interactive opencode session for the current project.
+---Open an interactive opencode session for the current project. The top-level
+---`opencode` command takes no --agent flag, so this one starts on the build
+---agent; switch to `nvim-safe` inside the session if you want its policy.
 function M.tui()
   terminal_split({ "opencode" }, project_root(vim.api.nvim_get_current_buf()), reload_changed_buffers)
 end

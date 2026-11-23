@@ -4,6 +4,12 @@ require("config.remote_clipboard").setup()
 vim.opt.relativenumber = false
 vim.g.autoformat = false
 
+-- <leader>ao runs opencode under the nvim-safe agent: it edits files and runs
+-- read-only commands, and any other shell command is refused outright, because
+-- `opencode run` cannot prompt. Set this to true to restore the old behaviour
+-- where the agent approves its own commands; :Opencode! does that for one run.
+vim.g.opencode_auto_approve = false
+
 -- Mason's tools live outside the shell PATH until the plugin loads, so put them
 -- there up front: conform, nvim-lint and dap all look tools up at first use
 local mason_bin = vim.fn.stdpath("data") .. "/mason/bin"
