@@ -69,7 +69,10 @@ return {
   -- ~ Inline completions ~
   {
     "milanglacier/minuet-ai.nvim",
-    event = { "InsertEnter" },
+    -- load before the filetype of a new buffer is set: minuet arms its
+    -- auto-trigger from a FileType autocmd, so a buffer whose FileType already
+    -- fired would never get suggestions
+    event = { "BufReadPre", "BufNewFile", "InsertEnter" },
     cmd = { "Minuet" },
     keys = {
       { "<leader>aT", "<cmd>Minuet virtualtext toggle<cr>", desc = "Toggle inline completions" },
@@ -147,8 +150,25 @@ return {
             next = "<a-]>",
             dismiss = "<a-e>",
           },
-          show_on_completion_menu = false,
+          show_on_completion_menu = true, -- blink keeps its menu open while typing; without this minuet never fires
         },
+      })
+
+      -- minuet arms auto-trigger per buffer from its own FileType autocmd, so a
+      -- buffer whose FileType already fired gets nothing. Arm it here as well.
+      local vt = require("minuet").config.virtualtext
+      local function arm(buf)
+        local ft = vim.bo[buf].filetype
+        if vim.tbl_contains(vt.auto_trigger_ft, ft) and not vim.tbl_contains(vt.auto_trigger_ignore_ft, ft) then
+          vim.b[buf].minuet_virtual_text_auto_trigger = true
+        end
+      end
+      arm(vim.api.nvim_get_current_buf())
+      vim.api.nvim_create_autocmd("FileType", {
+        callback = function(args)
+          arm(args.buf)
+        end,
+        desc = "Arm minuet inline completions",
       })
     end,
   },
